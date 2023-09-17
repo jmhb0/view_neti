@@ -357,4 +357,3 @@ dependencies:
     - widgetsnbextension==4.0.8
     - yarl==1.9.2
     - zipp==3.15.0
-prefix: /pasteur/u/jmhb/miniconda3/envs/neti
