@@ -1,3 +1,15 @@
+results
+data
+slurm_logs
+wandb
+analysis_scripts/results/
+logs
+nerfstudio
+nerf
+viewneti.github.io
+view_neti
+outputs
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
