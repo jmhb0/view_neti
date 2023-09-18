@@ -201,8 +201,6 @@ dependencies:
     - ipywidgets==8.0.7
     - isoduration==20.11.0
     - itsdangerous==2.1.2
-    - jaxlib==0.1.68+cuda110
-    - jaxtyping==0.2.19
     - jmespath==1.0.1
     - json5==0.9.14
     - jsonpointer==2.4
@@ -357,4 +355,3 @@ dependencies:
     - widgetsnbextension==4.0.8
     - yarl==1.9.2
     - zipp==3.15.0
-prefix: /pasteur/u/jmhb/miniconda3/envs/neti
