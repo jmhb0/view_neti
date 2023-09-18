@@ -20,7 +20,7 @@ conda activate view_neti
 
 # Training 
 ## DTU dataset
-Our code supports learning scenes from the [DTU dataset](https://roboimagedata.compute.dtu.dk/?page_id=36). Download it and put it in `data/dtu`. To use other datasets, see [these instructions](#other_datasets).
+Our code supports learning scenes from the [DTU dataset](https://roboimagedata.compute.dtu.dk/?page_id=36). Download it and put it in `data/dtu`. To use other datasets, see the section "Train on other datasets".
 
 For computing metrics, we use masks from [RegNeRF](https://github.com/google-research/google-research/tree/master/regnerf), which can be dowloaded [here](https://drive.google.com/file/d/1Yt5T3LJ9DZDiHbtd9PDFNHqJAd7wt-_E/view?usp=sharing).
 
@@ -92,7 +92,7 @@ Set validation frequency in `eval.validation_steps`. Since we didn't optimize th
 The validation does novel view synthesis on the standard 34 views used in DTU. For each random seed for diffusion sampling, it will make create an image that shows the ground truth images and the novel view predictions; the training views are marked with a yellow bar. The predicted images are also saved to a `pt` file.
 
 
-## Logging
+### Logging
 Logs to Tensorboard by default. For weights & biases, set config option `log.report_to='wandb'`
 
 ## Train on other datasets
