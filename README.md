@@ -51,7 +51,7 @@ This will put results in `results/test_mode2`. The config variables for training
 
 ### Mode 0: object-only learning (normal textual inversion)
 ```
-python scripts/train.py --config_path input_configs/train.yaml --log.exp_name mode0_teapot  --model.learnable_mode 0 --data.train_data_dir data/datasets_mode0/colorful_teapot/
+python scripts/train.py --config_path input_configs/train.yaml --log.exp_name mode0_teapot  --learnable_mode 0 --data.train_data_dir data/datasets_mode0/colorful_teapot/
 ```
 
 The `train_data_dir` should contain `.png` image files of the original object. We include one dataset in this repo, and you can find more in the [NeTI](https://github.com/NeuralTextualInversion/NeTI) codebase. 
@@ -68,7 +68,7 @@ The `data.dtu_subset` can be {1,3,6,9} for the standard splits used in sparse-vi
 ### Mode 3: pretraining on multiple scenes
 To pretrain a view-mapper ($\mathcal{M}_v$) on many scenes on the [DTU dataset](https://roboimagedata.compute.dtu.dk/?page_id=36), specify the parent directory of the DTU scenes, the list of scene subdirectories, and strings that are the tokens for those scene's object-mappers ($\mathcal{M}_o$) (e.g. "\<skull\>" is a placeholder token for the skull object). 
 ```
-python scripts/train.py --config_path input_configs/train_m3.yaml --log.exp_name mode3_4scenes  --model.learnable_mode 3 --data.train_data_dir data/dtu/Rectified --data.dtu_subset 0 --optim.max_training_steps 100000 --data.train_data_subsets scan65,scan125,scan7,scan105 --data.super_category_object_tokens object,object,object,object --data.placeholder_object_tokens [<skull>,<statue>,<statue2>,<toy>
+python scripts/train.py --config_path input_configs/train_m3.yaml --log.exp_name mode3_4scenes  --learnable_mode 3 --data.train_data_dir data/dtu/Rectified --data.dtu_subset 0 --optim.max_training_steps 100000 --data.train_data_subsets scan65,scan125,scan7,scan105 --data.super_category_object_tokens object,object,object,object --data.placeholder_object_tokens [<skull>,<statue>,<statue2>,<toy>
 ```
 
 The view-mapper checkpoints will be saved like this: `results/mode3_4scenes/mapper-steps-50000_view.pt`.
@@ -78,7 +78,7 @@ The view-mapper checkpoints will be saved like this: `results/mode3_4scenes/mapp
 After pretraining a view-mapper (like in the last section), choose a checkpoint, and save a path to it in `training/pretrained_models.py`. This has a dictionary that maps integer keys to path names. E.g. if using model key 1, and doing novel view synthesis from only 1 view:
 
 ```
-python scripts/train.py --config_path input_configs/train.yaml  --model.learnable_mode 5 --data.train_data_dir data/dtu/Recitified/scan114  --data.dtu_subset 1 --optim.max_training_steps 3000 --model.pretrained_view_mapper_key 1
+python scripts/train.py --config_path input_configs/train.yaml  --learnable_mode 5 --data.train_data_dir data/dtu/Recitified/scan114  --data.dtu_subset 1 --optim.max_training_steps 3000 --model.pretrained_view_mapper_key 1
 ```
 
 Here is a sample pretrained view-mapper that has an architecture compatible with `input_config.yml`:
@@ -87,7 +87,7 @@ wget https://web.stanford.edu/~jmhb/files/viewneti/mapper-steps-50000_view.pt
 ```
 
 ### The validation loop 
-Set validation frequency in `eval.validation_steps`. Since we didn't optimize this code, it's a bit slow: 10mins to run inference for 34 images in one scene for 3 seeds. If using `model.learnable_mode` 3, choose which scenes to do eval for in `eval.eval_placeholder_object_tokens` (remembering that too many eval scenes will be very slow). For validation to work, the model also has to be saved at the same step, which can be set with `log.save_steps`.
+Set validation frequency in `eval.validation_steps`. Since we didn't optimize this code, it's a bit slow: 10mins to run inference for 34 images in one scene for 3 seeds. If using `learnable_mode` 3, choose which scenes to do eval for in `eval.eval_placeholder_object_tokens` (remembering that too many eval scenes will be very slow). For validation to work, the model also has to be saved at the same step, which can be set with `log.save_steps`.
 
 The validation does novel view synthesis on the standard 34 views used in DTU. For each random seed for diffusion sampling, it will make create an image that shows the ground truth images and the novel view predictions; the training views are marked with a yellow bar. The predicted images are also saved to a `pt` file.
 
