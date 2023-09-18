@@ -146,7 +146,7 @@ class TextualInversionDataset(Dataset):
             self.current_object_idx = np.random.choice(
                 len(self.train_data_subsets))
 
-        assert self.num_images > 0
+        assert self.num_images > 0, "no .png images found. Check the --data.train_data_dir" option
         self._length = self.num_images
         print(f"Running on {self.num_images} images")
         if set == "train":
