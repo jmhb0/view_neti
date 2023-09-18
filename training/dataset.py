@@ -15,7 +15,7 @@ from torchvision import transforms as T
 from transformers import CLIPTokenizer
 
 from constants import IMAGENET_STYLE_TEMPLATES_SMALL, IMAGENET_TEMPLATES_SMALL, PATH_DTU_CALIBRATION_DIR, DTU_SPLIT_IDXS
-from utils.utils import num_to_string, string_to_num, filter_paths_png
+from utils.utils import num_to_string, string_to_num, filter_paths_imgs
 
 if version.parse(version.parse(
         PIL.__version__).base_version) >= version.parse("9.1.0"):
@@ -99,7 +99,7 @@ class TextualInversionDataset(Dataset):
         if self.learnable_mode != 3:
             # get fnames, and filter for png
             self.image_paths = list(self.data_root.glob("*"))
-            self.image_paths = filter_paths_png(self.image_paths)
+            self.image_paths = filter_paths_imgs(self.image_paths)
 
             # dtu-specific edits for lighting and non-excluded cam idxs
             if self.camera_representation in ('dtu-12d'):
@@ -121,7 +121,7 @@ class TextualInversionDataset(Dataset):
                 subdir = str(subdir)  # ow the key will be PosixPath
                 self.image_paths[subdir] = list(
                     (self.data_root / subdir).glob("*"))
-                self.image_paths[subdir] = filter_paths_png(
+                self.image_paths[subdir] = filter_paths_imgs(
                     self.image_paths[subdir])
 
                 # dtu-specific edits for lighting and non-excluded cam idxs

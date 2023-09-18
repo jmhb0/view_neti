@@ -33,5 +33,5 @@ def parameters_checksum(model):
     return sum
 
 
-def filter_paths_png(paths):
-    return [p for p in paths if Path(p).suffix == '.png']
+def filter_paths_imgs(paths):
+    return [p for p in paths if Path(p).suffix == '.png' or Path(p).suffix == '.jpg']
