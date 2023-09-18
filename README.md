@@ -86,7 +86,7 @@ Here is a sample pretrained view-mapper that has an architecture compatible with
 wget https://web.stanford.edu/~jmhb/files/viewneti/mapper-steps-50000_view.pt
 ```
 
-### The validation loop 
+### Validation 
 Set validation frequency in `eval.validation_steps`. Since we didn't optimize this code, it's a bit slow: 10mins to run inference for 34 images in one scene for 3 seeds. If using `learnable_mode` 3, choose which scenes to do eval for in `eval.eval_placeholder_object_tokens` (remembering that too many eval scenes will be very slow). For validation to work, the model also has to be saved at the same step, which can be set with `log.save_steps`.
 
 The validation does novel view synthesis on the standard 34 views used in DTU. For each random seed for diffusion sampling, it will make create an image that shows the ground truth images and the novel view predictions; the training views are marked with a yellow bar. The predicted images are also saved to a `pt` file.
