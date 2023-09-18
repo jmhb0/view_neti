@@ -102,7 +102,7 @@ class TextualInversionDataset(Dataset):
             self.image_paths = filter_paths_imgs(self.image_paths)
 
             # dtu-specific edits for lighting and non-excluded cam idxs
-            if self.camera_representation in ('dtu-12d'):
+            if self.camera_representation in ('dtu-12d') and self.learnable_mode != 0:
                 self.image_paths = TextualInversionDataset.dtu_filter_fnames_lighting(
                     self.image_paths, self.dtu_lighting)
                 idxs = TextualInversionDataset.dtu_get_train_idxs(dtu_subset)
@@ -228,7 +228,9 @@ class TextualInversionDataset(Dataset):
         self.augmentation_key = augmentation_key
 
         if self.augmentation_key > 0:
-            if self.dtu_preprocess_key == 0:
+            if self.learnable_mode == 0:
+                size = (self.size,self.size)
+            elif self.dtu_preprocess_key == 0:
                 size = (512, 512)
             elif self.dtu_preprocess_key == 1:
                 size = (384, 512)  # size axes are reversed compared to PIL oib
@@ -716,7 +718,7 @@ class TextualInversionDataset(Dataset):
             else:
                 raise NotImplementedError()
 
-        elif 'llff' in data_root:
+        elif 'llff' in str(self.data_root):
             pass  # no resizing
 
         # non dtu-datasets use the original options
