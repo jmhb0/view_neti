@@ -97,7 +97,7 @@ Logs to Tensorboard by default. For weights & biases, set config option `log.rep
 
 ## Train on other datasets
 <a id="other_datasets"></a>
-To train on other datasets, you'll need to change some code to handle the different camera representations. The camera representation flag is set in the config under `model.camera_representation`. The files that need updating are `training/dataset.py`, wherever `camera_representation` is used, and file  `models/neti_mapper.py` wherever `deg_freedom` is used. 
+To train on other datasets, you'll need to change some code to handle the different camera representations. The camera representation flag is set in the config under `model.camera_representation`. The files that need updating are `training/dataset.py`, wherever `camera_representation` is used, and file  `models/neti_mapper.py` wherever `deg_freedom` is used. For validation, in `training/validate.py`, reimplement `ValidationHandler.infer`.
 
 # Acknowledgments
 Our code builds on [NeTI](https://github.com/NeuralTextualInversion/NeTI), the SOTA for textual inversion of objects and styles (at the time of writing).
