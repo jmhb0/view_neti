@@ -14,7 +14,7 @@ Abstract:
 # Setup
 ## Conda Environment
 ```
-conda env create -f environment.yaml
+conda env create -f environment.yml
 conda activate view_neti
 ```
 
