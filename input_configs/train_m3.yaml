@@ -3,7 +3,7 @@ log:
   exp_name: train
   overwrite_ok: False 
   exp_dir: results
-  save_steps: 1500
+  save_steps: 5000
   report_to: 'tensorboard'
 data:
   train_data_dir: data/dtu/Rectified
