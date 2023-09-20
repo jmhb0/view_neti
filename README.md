@@ -66,9 +66,9 @@ The `data.dtu_subset` can be {1,3,6,9} for the standard splits used in sparse-vi
 
  
 ### Mode 3: pretraining on multiple scenes
-To pretrain a view-mapper ($\mathcal{M}_v$) on many scenes on the [DTU dataset](https://roboimagedata.compute.dtu.dk/?page_id=36), specify the parent directory of the DTU scenes, the list of scene subdirectories, and strings that are the tokens for those scene's object-mappers ($\mathcal{M}_o$) (e.g. "\<skull\>" is a placeholder token for the skull object). 
+To pretrain a view-mapper ($\mathcal{M}_v$) on many scenes on the [DTU dataset](https://roboimagedata.compute.dtu.dk/?page_id=36) specify: the parent directory of the DTU scenes in `data.train_data_dir`; the list of scene subdirectories in `data.train_data_subsets:`; the strings that are the tokens for those scene's object-mappers ($\mathcal{M}_o$) (e.g. "\<skull\>" is a placeholder token for the skull object) in `data.placeholder_object_tokens`, and the reference token for normalizing (just set it as 'object' for everything) in `data.super_category_object_tokens`. An example config is at [input_configs/train_m3.yaml](input_configs/train_m3.yaml). 
 ```
-python scripts/train.py --config_path input_configs/train_m3.yaml --log.exp_name mode3_4scenes  --learnable_mode 3 --data.train_data_dir data/dtu/Rectified --data.dtu_subset 0 --optim.max_train_steps 100000 --data.train_data_subsets scan65,scan125,scan7,scan105 --data.super_category_object_tokens object,object,object,object --data.placeholder_object_tokens [<skull>,<statue>,<statue2>,<toy>
+python scripts/train.py --config_path input_configs/train_m3.yaml --log.exp_name mode3_4scenes  --learnable_mode 3 --data.train_data_dir data/dtu/Rectified --data.dtu_subset 0 --optim.max_train_steps 60000  
 ```
 
 The view-mapper checkpoints will be saved like this: `results/mode3_4scenes/mapper-steps-50000_view.pt`.
