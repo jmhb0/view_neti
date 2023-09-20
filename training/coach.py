@@ -147,10 +147,10 @@ class Coach:
 
             self.text_encoder.train()
             for step, batch in enumerate(self.train_dataloader):
-                ## the next line is no longer used ... can look at the `reset_sampled_object`
-                ## docstring if you want to reimplement
-                # if self.cfg.learnable_mode == 3:
-                    # self.train_dataset.reset_sampled_object()
+                if self.cfg.learnable_mode == 3:
+                    self.train_dataset.reset_sampled_object()
+
+                print(batch['input_ids_placeholder_object'])
 
                 with self.accelerator.accumulate(self.text_encoder):
                     ## following commented code is to check that weights are updating
