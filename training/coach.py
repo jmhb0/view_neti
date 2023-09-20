@@ -150,8 +150,6 @@ class Coach:
                 if self.cfg.learnable_mode == 3:
                     self.train_dataset.reset_sampled_object()
 
-                print(batch['input_ids_placeholder_object'])
-
                 with self.accelerator.accumulate(self.text_encoder):
                     ## following commented code is to check that weights are updating
                     # cksm_object = parameters_checksum(list(self.text_encoder.text_model.embeddings.mapper_object_lookup.values())[0])
