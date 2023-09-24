@@ -22,7 +22,7 @@ conda activate view_neti
 ## DTU dataset
 Our code supports learning scenes from the [DTU dataset](https://roboimagedata.compute.dtu.dk/?page_id=36). Download it and put it in `data/dtu`. To use other datasets, see the section "Train on other datasets".
 
-For computing metrics, we use masks from [RegNeRF](https://github.com/google-research/google-research/tree/master/regnerf), which can be dowloaded [here](https://drive.google.com/file/d/1Yt5T3LJ9DZDiHbtd9PDFNHqJAd7wt-_E/view?usp=sharing).
+For computing metrics, we use masks from [RegNeRF](https://github.com/google-research/google-research/tree/master/regnerf), which can be downloaded [here](https://drive.google.com/file/d/1Yt5T3LJ9DZDiHbtd9PDFNHqJAd7wt-_E/view?usp=sharing).
 
 ## The 'learnable modes'
 Here's the ViewNeTI architecture:
