@@ -36,7 +36,9 @@ class ValidationHandler:
                  placeholder_object_token_ids: List[int],
                  fixed_object_token: str,
                  weights_dtype: torch.dtype,
-                 max_rows: int = 14):
+                 max_rows: int = 14,
+                 ):
+
         self.cfg = cfg
         self.placeholder_view_tokens = placeholder_view_tokens
         self.placeholder_view_token_ids = placeholder_view_token_ids
@@ -51,7 +53,6 @@ class ValidationHandler:
         else:
             self.is_dtu = False
 
-
         if self.cfg.data.dtu_preprocess_key == 0:
             self.width, self.height = 512, 512
         elif self.cfg.data.dtu_preprocess_key == 1:
@@ -60,8 +61,13 @@ class ValidationHandler:
         else:
             self.width, self.height = None, None
 
+
     def infer_dtu(self, accelerator, tokenizer, text_encoder, unet, vae,
-                  num_images_per_prompt, seeds, step, prompts):
+                  num_images_per_prompt, seeds, step, prompts, return_instead_of_save=False):
+        """
+        return_instead_of_save=False
+        return_instead_of_save: if True, then don't do any model logging.
+        """
         train_cfg = self.cfg
         if self.cfg.debug:
             num_denoising_steps = 1
@@ -74,24 +80,26 @@ class ValidationHandler:
             train_cfg.data.dtu_subset)
 
         ## Get image predictions, as a lookup from camidx->img.
-        fname_saved_images = Path(
-            train_cfg.log.exp_dir
-        ) / f"validation-iter_{step}-denoisesteps_{train_cfg.eval.num_denoising_steps}_numseeds_{len(train_cfg.eval.validation_seeds)}_upsample_{train_cfg.eval.dtu_upsample_key}.pt"
-
         lookup_camidx_to_img_pred, pipeline = inference_dtu.dtu_generate_camidxs_to_preds(
             train_cfg=train_cfg,
             cam_idxs=cam_idxs,
             step=step,
             num_denoising_steps=num_denoising_steps,
-            seeds=train_cfg.eval.validation_seeds,
+            seeds=seeds,
             torch_dtype=self.weight_dtype,
             return_pipeline=True)
 
         if len(lookup_camidx_to_img_pred) == 0:
-            # means there was a connection error thrown by diffusers library
+            # this means there was a connection error thrown by diffusers library
             # see handling in dtu_generate_camidxs_to_preds
             return
-        torch.save(lookup_camidx_to_img_pred, fname_saved_images)
+
+        # save the image predictions
+        if not return_instead_of_save:
+            fname_saved_images = Path(
+            train_cfg.log.exp_dir
+        ) / f"validation-iter_{step}-denoisesteps_{train_cfg.eval.num_denoising_steps}_numseeds_{len(seeds)}_upsample_{train_cfg.eval.dtu_upsample_key}.pt"
+            torch.save(lookup_camidx_to_img_pred, fname_saved_images)
         assert set(lookup_camidx_to_img_pred.keys()) == set(cam_idxs)
 
         # collect gt images, as lookup camidx->img
@@ -105,17 +113,21 @@ class ValidationHandler:
             cam_idxs, scan_id)
 
         # do preprocessing -> torch tensors, to size (300,400)
-        imgs_pred_all_seeds, imgs_gt, masks, imgs_gt_plot = inference_dtu.process_imgs(
+        imgs_pred_all_seeds, imgs_gt, masks, imgs_gt, imgs_gt_plot = inference_dtu.process_imgs(
             cam_idxs, cam_idxs_train, lookup_camidx_to_img_pred,
             lookup_camidx_to_img_gt, lookup_camidx_to_mask)
 
         # run the numbers and get the grid
         results = inference_dtu.get_result_metrics_and_grids(
-            cam_idxs, cam_idxs_train, imgs_pred_all_seeds, imgs_gt, masks,
-            imgs_gt_plot, train_cfg.eval.validation_seeds)
+            cam_idxs, cam_idxs_train, imgs_pred_all_seeds, imgs_gt, masks, 
+            imgs_gt_plot, seeds)
 
-        # save the images
-        for i, seed in enumerate(train_cfg.eval.validation_seeds):
+        # return early if not saving to loggers or files: this branch is called by inference.py
+        if return_instead_of_save:
+            return pipeline, results
+
+        # save the images to the loggers
+        for i, seed in enumerate(seeds):
             fname_saved_images = fname_saved_images.parent / f"{fname_saved_images.stem}_seed_{seed}.png"
             results['figures'][i].savefig(fname_saved_images, dpi=350)
             for tracker in accelerator.trackers:
@@ -134,7 +146,7 @@ class ValidationHandler:
                          'lpips_train_mean', 'lpips_test_mean')
             }
             tracker.log(log_metrics)
-        return pipeline
+        return pipeline, None
 
     def infer_mode3(self, accelerator, tokenizer, text_encoder, unet, vae,
                     num_images_per_prompt, seeds, step, prompts):
@@ -362,7 +374,7 @@ class ValidationHandler:
             return None
 
         if self.is_dtu:
-            pipeline = self.infer_dtu(accelerator, tokenizer, text_encoder,
+            pipeline, _ = self.infer_dtu(accelerator, tokenizer, text_encoder,
                                       unet, vae, num_images_per_prompt, seeds,
                                       step, prompts)
 

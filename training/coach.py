@@ -71,8 +71,13 @@ class Coach:
         self.load_pretrained_object_neti = True if self.cfg.data.fixed_object_token_or_path is not None and Path(
             self.cfg.data.fixed_object_token_or_path
         ).suffix == '.pt' else False
-        self.token_embeds, self.placeholder_token_ids, self.placeholder_view_token_ids, self.placeholder_object_token_ids = self._add_concept_token_to_tokenizer(
+        # self.token_embeds, self.placeholder_token_ids, self.placeholder_view_token_ids, self.placeholder_object_token_ids = self._add_concept_token_to_tokenizer(
+        # )
+        # alternative way to do it
+        self.token_embeds, self.placeholder_token_ids, self.placeholder_view_token_ids, self.placeholder_object_token_ids = Coach._add_concept_token_to_tokenizer_static(
+            self.cfg, self.train_dataset.placeholder_view_tokens, self.train_dataset.placeholder_object_tokens, self.tokenizer, self.text_encoder
         )
+
         self.cfg.data.placeholder_view_tokens = self.placeholder_view_tokens
 
         # Initilize neti mapping objects, and finish preparing all the models
@@ -314,6 +319,84 @@ class Coach:
         self.logger.update_step(step=global_step)
         return global_step
 
+    @staticmethod
+    def _add_concept_token_to_tokenizer_static(cfg, placeholder_view_tokens, 
+        placeholder_object_tokens, tokenizer, text_encoder
+        ):
+        placeholder_tokens = placeholder_view_tokens + placeholder_object_tokens
+        num_added_tokens = tokenizer.add_tokens(placeholder_tokens)
+        if num_added_tokens == 0:
+            raise ValueError(
+                f"No new tokens were added to the tokenizer"
+                f"Please pass a different `placeholder_token` that is not already in the tokenizer."
+            )
+
+        # extract all the placeholder ids
+        placeholder_view_token_ids = tokenizer.convert_tokens_to_ids(
+            placeholder_view_tokens)
+        placeholder_object_token_ids = tokenizer.convert_tokens_to_ids(
+            placeholder_object_tokens)
+        placeholder_token_ids = tokenizer.convert_tokens_to_ids(
+            placeholder_tokens)
+        assert set(placeholder_view_token_ids).union(
+            set(placeholder_object_token_ids)) == set(placeholder_token_ids)
+
+
+        ### TODO - this should handle a list of super_category tokens
+        # Convert the super_category_token, placeholder_token to ids
+        super_category_object_token_id = tokenizer.encode(
+            cfg.data.super_category_object_token,
+            add_special_tokens=False)
+        super_category_view_token_id = tokenizer.encode(
+            cfg.data.super_category_view_token, add_special_tokens=False)
+
+        super_token_ids = super_category_object_token_id + super_category_view_token_id
+
+        # Check if super_category_token is a single token or a sequence of tokens
+        if len(super_category_object_token_id) != 1:
+            raise ValueError(
+                f"object supercategory [self.cfg.data.super_category_object_token] not in the vocabulary"
+            )
+        if len(super_category_view_token_id) != 1:
+            raise ValueError(
+                "view supercategory [self.cfg.data.super_category_view_token] not in the vocabulary"
+            )
+        super_category_object_token_id, super_category_view_token_id = super_category_object_token_id[
+            0], super_category_view_token_id[0]
+
+        # Resize the token embeddings as we are adding new special tokens to the tokenizer
+        text_encoder.resize_token_embeddings(len(tokenizer))
+
+        # Initialize the newly added placeholder token with the embeddings of the super category token
+        token_embeds = text_encoder.get_input_embeddings().weight.data
+        token_embeds[placeholder_view_token_ids] = token_embeds[
+            super_category_view_token_id].clone().unsqueeze(0).repeat(
+                len(placeholder_view_token_ids), 1)
+        token_embeds[placeholder_object_token_ids] = token_embeds[
+            super_category_object_token_id].clone().unsqueeze(0).repeat(
+                len(placeholder_object_token_ids), 1)
+
+        ## Compute the norm of the super category token embedding for scaling mapper output
+        cfg.model.target_norm_view = None
+        cfg.model.target_norm_object = None
+
+        if cfg.model.normalize_view_mapper_output:
+            if super_category_view_token_id == tokenizer.unk_token_id:
+                raise ValueError(
+                    f"super_category_view_token [{cfg.data.super_category_object_token}] ",
+                    " is unknown to the tokenizer")
+            cfg.model.target_norm_view = token_embeds[
+                super_category_view_token_id].norm().item()
+        if cfg.model.normalize_object_mapper_output:
+            if super_category_object_token_id == tokenizer.unk_token_id:
+                raise ValueError(
+                    f"super_category_view_token [{super_category_object_token_id}] ",
+                    " is unknown to the tokenizer")
+            cfg.model.target_norm_object = token_embeds[
+                super_category_object_token_id].norm().item()
+
+        return token_embeds, placeholder_token_ids, placeholder_view_token_ids, placeholder_object_token_ids
+
     def _add_concept_token_to_tokenizer(self) -> Tuple[torch.Tensor, int]:
         """
         Adds the concept token to the tokenizer and initializes it with the embeddings of the super category token.
@@ -347,13 +430,6 @@ class Coach:
             self.cfg.data.super_category_view_token, add_special_tokens=False)
 
         super_token_ids = super_category_object_token_id + super_category_view_token_id
-
-        # super_token_ids = self.tokenizer.encode([
-        #     self.cfg.data.super_category_object_token,
-        #     self.cfg.data.super_category_view_token
-        # ],
-        #                                         add_special_tokens=False)
-        # super_category_object_token_id, super_category_view_token_id = super_token_ids
 
         # Check if super_category_token is a single token or a sequence of tokens
         if len(super_category_object_token_id) != 1:

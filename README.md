@@ -99,6 +99,25 @@ Logs to Tensorboard by default. For weights & biases, set config option `log.rep
 <a id="other_datasets"></a>
 To train on other datasets, you'll need to change some code to handle the different camera representations. The camera representation flag is set in the config under `model.camera_representation`. The files that need updating are `training/dataset.py`, wherever `camera_representation` is used, and file  `models/neti_mapper.py` wherever `deg_freedom` is used. 
 
+## Checkpoints and predictions for DTU single-image and 3-image novel view synthesis
+We provide checkpoints for single-image and 3-image NVS on DTU. These are the models you get from running  section "Mode 4/5" above. Download with:
+
+```
+gdown --fuzzy --output results/ https://
+tar -xzvf results/view_neti_models.tar.gz
+```
+
+For example, `20230805_scan114_subs_1_m5_alpha5_augs7_pretrainkey8` is DTU scan 114, and `subs_1` means the training subset had only 1 input image. The pretrained mappers are saved for iterations 1500 and 3000. 
+
+The saved checkpoints already have the outputs of running inference under the `inference` directory. For example `preds_iter_1500_seed0.png` is visualized predictions for iteration 1500, and diffusion sampling seed 0; a yellow bar above an image means it's a training image. Running `results=torch.load("results_all_iter_1500.pt"`)` gives access to image predictions, gt images, and masks. To run inference yourself, do:
+```
+python scripts/inference.py 
+	--config_path input_configs/inference.yaml \
+	--input_dir results/20230805_scan114_subs_1_m5_alpha5_augs7_pretrainkey8 \
+	--iteration 1500
+```
+The DTU metrics can then be computed with `python scripts/summarize_dtu.py`
+
 # Acknowledgments
 Our code builds on [NeTI](https://github.com/NeuralTextualInversion/NeTI), the SOTA for textual inversion of objects and styles (at the time of writing).
 

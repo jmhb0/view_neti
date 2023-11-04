@@ -417,6 +417,7 @@ def process_imgs(cam_idxs, cam_idxs_train, lookup_camidx_to_img_pred,
     assert imgs_pred.ndim == 5, "expected (bs,n_seeds,h,w,3)"
     imgs_pred = torch.tensor(imgs_pred).permute(0, 1, 4, 2, 3)
 
+    # ipdb.set_trace()
     imgs_gt = np.stack([lookup_camidx_to_img_gt[i] for i in cam_idxs])
     masks = np.stack([lookup_camidx_to_mask[i] for i in cam_idxs])
     assert imgs_gt.ndim == 4 and masks.ndim == 4, "expected (bs,h,w,3)"
@@ -460,7 +461,7 @@ def process_imgs(cam_idxs, cam_idxs_train, lookup_camidx_to_img_pred,
     masks[masks > thresh] = 1
     masks[masks <= thresh] = 0
 
-    return imgs_pred, imgs_gt, masks, imgs_gt_plot
+    return imgs_pred, imgs_gt, masks, imgs_gt, imgs_gt_plot
 
 
 def get_result_metrics_and_grids(cam_idxs,
@@ -484,13 +485,13 @@ def get_result_metrics_and_grids(cam_idxs,
     mse_test, psnr_test, ssim_test, lpips_test = [], [], [], []
 
     # iterate over the random seeds
-    grids, figures = [], []
+    grids, figures, all_imgs_pred, all_imgs_gt = [], [], [], []
     for i, seed in enumerate(seeds):
         # get metrics
         imgs_pred = imgs_pred_all_seeds[:, i]  # (bs,3,h,w)
+        all_imgs_pred.append(imgs_pred)
         # mse_b = mse_batch(imgs_pred * masks, imgs_gt * masks)
         ## better mse computation
-        # ipdb.set_trace()
         bs = len(imgs_pred)
         mse_b = (((imgs_gt*masks) - (imgs_pred*masks))**2 ).view(bs,-1).sum(dim=1) / masks.view(bs,-1).sum(dim=1)
 
@@ -518,6 +519,7 @@ def get_result_metrics_and_grids(cam_idxs,
 
         # make grid
         nrow = len(imgs_gt)
+        all_imgs_gt.append(imgs_gt_plot)
         grid_gt_plot = make_grid(imgs_gt_plot, nrow=nrow)
         grid_pred = make_grid(imgs_pred, nrow=nrow)
         grid_pred_masked = make_grid(imgs_pred * masks, nrow=nrow)
@@ -586,6 +588,10 @@ def get_result_metrics_and_grids(cam_idxs,
     return dict(
         figures=figures,
         grids=grids,
+        imgs_pred=all_imgs_pred,
+        imgs_gt=imgs_gt,
+        imgs_gt_plot=imgs_gt_plot,
+        masks=masks,
         mse_train_mean=mse_train_mean.item(),
         mse_test_mean=mse_test_mean.item(),
         psnr_train_mean=psnr_train_mean.item(),
@@ -595,7 +601,6 @@ def get_result_metrics_and_grids(cam_idxs,
         lpips_train_mean=lpips_train_mean.item(),
         lpips_test_mean=lpips_test_mean.item(),
     )
-
 
 def mse_to_psnr(mse):
     """

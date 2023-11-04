@@ -97,6 +97,37 @@ class CheckpointHandler:
             torch.save(state_dict, fname)
 
     @staticmethod
+    def clean_config_dict(cfg_dict):
+        """ 
+        If you run pyrallis.decode() to recreate a config object from a saved 
+        config from a pretrained model, then there are some clashes that happen.
+        This is a hacky way to fix them. 
+        """
+        if 'placeholder_view_tokens' in cfg_dict['data'].keys():
+            del cfg_dict['data']['placeholder_view_tokens']
+
+        for k in [
+                'target_norm_object', 'target_norm_view',
+                'pretrained_view_mapper', 'pretrained_view_mapper_key'
+        ]:  
+            if k in cfg_dict['model'].keys():
+                if cfg_dict['model'][k] is None:
+                    del cfg_dict['model'][k]
+
+        for k in ["validation_view_tokens", "eval_placeholder_object_tokens"]:
+            if k in cfg_dict['eval'].keys():
+                if cfg_dict['eval'][k] is None:
+                    del cfg_dict['eval'][k]
+
+        for k in ['placeholder_object_tokens', 'train_data_subsets']:
+            if k in cfg_dict['data'].keys():
+                if cfg_dict['data'][k] is None:
+                    del cfg_dict['data'][k]
+
+        return cfg_dict
+
+
+    @staticmethod
     def load_mapper(
         mapper_path: Path,
         embedding_type: Literal["object", "view"] = "object",
@@ -107,28 +138,7 @@ class CheckpointHandler:
     ) -> Tuple[RunConfig, NeTIMapper]:
         """ """
         mapper_ckpt = torch.load(mapper_path, map_location="cpu")
-        # hacks
-        if 'placeholder_view_tokens' in mapper_ckpt['cfg']['data'].keys():
-            del mapper_ckpt['cfg']['data']['placeholder_view_tokens']
-
-        for k in [
-                'target_norm_object', 'target_norm_view',
-                'pretrained_view_mapper', 'pretrained_view_mapper_key'
-        ]:  
-            if k in mapper_ckpt['cfg']['model'].keys():
-                if mapper_ckpt['cfg']['model'][k] is None:
-                    del mapper_ckpt['cfg']['model'][k]
-
-        for k in ["validation_view_tokens", "eval_placeholder_object_tokens"]:
-            if k in mapper_ckpt['cfg']['eval'].keys():
-                if mapper_ckpt['cfg']['eval'][k] is None:
-                    del mapper_ckpt['cfg']['eval'][k]
-
-        for k in ['placeholder_object_tokens', 'train_data_subsets']:
-            if k in mapper_ckpt['cfg']['data'].keys():
-                if mapper_ckpt['cfg']['data'][k] is None:
-                    del mapper_ckpt['cfg']['data'][k]
-
+        cfg_dict = CheckpointHandler.clean_config_dict(mapper_ckpt['cfg']) # some hacks
         cfg = pyrallis.decode(RunConfig, mapper_ckpt['cfg'])
 
         # handle the special case of getting the view token_ids from the tokenizer

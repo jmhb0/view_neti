@@ -486,6 +486,7 @@ class TextualInversionDataset(Dataset):
 
         return cam_params, cam_idx
 
+
     @staticmethod
     def dtu_generate_dset_cam_tokens_params():
         """ 

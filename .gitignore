@@ -9,6 +9,8 @@ nerf
 viewneti.github.io
 view_neti
 outputs
+scripts_tmp
+threestudio
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

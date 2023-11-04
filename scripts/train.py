@@ -27,7 +27,9 @@ def main(cfg: RunConfig):
 def prepare_directories(cfg: RunConfig):
     cfg.log.exp_dir = cfg.log.exp_dir / cfg.log.exp_name
     if os.path.exists(cfg.log.exp_dir) and not cfg.log.overwrite_ok:
-        raise ValueError(f"Experiment folder already exists and overwrite_ok=False: [{cfg.log.exp_dir}]")
+        raise ValueError(f"Experiment folder already exists and overwrite_ok=False: [{cfg.log.exp_dir}]"\
+            f" to overwrite the old experiment, add --log.overwrite_ok"
+            )
     cfg.log.exp_dir.mkdir(parents=True, exist_ok=True)
     cfg.log.logging_dir = cfg.log.exp_dir / cfg.log.logging_dir
     cfg.log.logging_dir.mkdir(parents=True, exist_ok=True)

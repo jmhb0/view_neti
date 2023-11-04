@@ -1,0 +1,5 @@
+input_dir: results/exp
+iteration: 1500
+seeds: [0,1]
+torch_dtype: fp16
+num_denoising_steps: 30

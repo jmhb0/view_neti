@@ -1,3 +1,5 @@
+"""
+"""
 import ipdb
 import sys
 from dataclasses import dataclass, field
@@ -22,7 +24,12 @@ from sd_pipeline_call import sd_pipeline_call
 from models.xti_attention_processor import XTIAttenProc
 from checkpoint_handler import CheckpointHandler
 from utils import vis_utils
-
+from diffusers import AutoencoderKL, DDPMScheduler, UNet2DConditionModel
+from training.coach import Coach
+from training.validate import ValidationHandler
+from training.config import RunConfig
+from training.dataset import TextualInversionDataset
+from accelerate import Accelerator
 
 @dataclass
 class InferenceConfig:
@@ -32,149 +39,99 @@ class InferenceConfig:
     input_dir: Optional[Path] = None
     # Where the save the inference results to
     inference_dir: Optional[Path] = None
-    # Specific path to the mapper you want to load, overrides `input_dir`
-    mapper_checkpoint_path: Optional[Path] = None
-    # Specific path to the embeddings you want to load, overrides `input_dir`
-    learned_embeds_path: Optional[Path] = None
-    # List of prompts to run inference on
-    prompts: Optional[List[str]] = None
-    # Text file containing a prompts to run inference on (one prompt per line), overrides `prompts`
-    prompts_file_path: Optional[Path] = None
     # List of random seeds to run on
     seeds: List[int] = field(default_factory=lambda: [42])
-    # If you want to run with dropout at inference time, this specifies the truncation indices for applying dropout.
-    # None indicates that no dropout will be performed. If a list of indices is provided, will run all indices.
-    truncation_idxs: Optional[Union[int, List[int]]] = None
     # Whether to run with torch.float16 or torch.float32
     torch_dtype: str = "fp16"
+    # number of steps in diffusion model denoising
+    num_denoising_steps: int = 30
 
     def __post_init__(self):
-        assert bool(self.prompts) != bool(self.prompts_file_path), \
-            "You must provide either prompts or prompts_file_path, but not both!"
-        self._set_prompts()
-        self._set_input_paths()
-        self.inference_dir.mkdir(exist_ok=True, parents=True)
-        if type(self.truncation_idxs) == int:
-            self.truncation_idxs = [self.truncation_idxs]
-        self.torch_dtype = torch.float16 if self.torch_dtype == "fp16" else torch.float32
-
-    def _set_input_paths(self):
         if self.inference_dir is None:
-            assert self.input_dir is not None, "You must pass an input_dir if you do not specify inference_dir"
-            self.inference_dir = self.input_dir / f"inference_{self.iteration}"
-        if self.mapper_checkpoint_path is None:
-            assert self.input_dir is not None, "You must pass an input_dir if you do not specify mapper_checkpoint_path"
-            self.mapper_checkpoint_path = self.input_dir / f"mapper-steps-{self.iteration}_object.pt"
-        if self.learned_embeds_path is None:
-            assert self.input_dir is not None, "You must pass an input_dir if you do not specify learned_embeds_path"
-            self.learned_embeds_path = self.input_dir / f"learned_embeds-steps-{self.iteration}.bin"
-
-    def _set_prompts(self):
-        if self.prompts_file_path is not None:
-            assert self.prompts_file_path.exists(), f"Prompts file {self.prompts_file_path} does not exist!"
-            self.prompts = self.prompts_file_path.read_text().splitlines()
-
+            self.inference_dir = self.input_dir / "inference"
+        self.inference_dir.mkdir(exist_ok=True, parents=True)
+        self.torch_dtype = torch.float16 if self.torch_dtype == "fp16" else torch.float32
 
 @pyrallis.wrap()
 def main(infer_cfg: InferenceConfig):
-    train_cfg, mapper = CheckpointHandler.load_mapper(infer_cfg.mapper_checkpoint_path)
-    pipeline, placeholder_token, placeholder_token_id = load_stable_diffusion_model(
-        pretrained_model_name_or_path=train_cfg.model.pretrained_model_name_or_path,
-        mapper=mapper,
-        learned_embeds_path=infer_cfg.learned_embeds_path,
-        torch_dtype=infer_cfg.torch_dtype
-    )
+    """ """
+    # get the training config 
+    mapper_checkpoint_path = infer_cfg.input_dir / f"mapper-steps-{infer_cfg.iteration}_view.pt"
+    mapper_ckpt = torch.load(mapper_checkpoint_path)
+    train_cfg_dict = CheckpointHandler.clean_config_dict(mapper_ckpt['cfg'])
+    train_cfg = pyrallis.decode(RunConfig, train_cfg_dict) 
+    train_cfg.eval.num_denoising_steps = infer_cfg.num_denoising_steps
 
-    # next lines are adapting to the new prompt manager definition
-    placeholder_object_tokens = [placeholder_token]
-    placeholder_object_token_ids = [placeholder_token_id]
-    placeholder_view_token_ids = []
-    prompt_manager = PromptManager(
-            tokenizer=pipeline.tokenizer,
-            text_encoder=pipeline.text_encoder,
-            timesteps=pipeline.scheduler.timesteps,
-            unet_layers=constants.UNET_LAYERS,
-            placeholder_view_token_ids=placeholder_view_token_ids,
-            placeholder_object_token_ids=placeholder_object_token_ids,
-            torch_dtype=infer_cfg.torch_dtype
+    if train_cfg.data.camera_representation != 'dtu-12d':
+        raise NotImplementedError("inference.py script only implemented for dtu dataset")
+
+    # generate view tokens for DTU, and read the object token 
+    lookup_camidx_to_view_token, _ = TextualInversionDataset.dtu_generate_dset_cam_tokens_params()
+    cam_idxs = constants.DTU_SPLIT_IDXS['train'] + constants.DTU_SPLIT_IDXS['test']
+    lookup_camidx_to_view_token = { k:v for (k,v) in lookup_camidx_to_view_token.items() if k in cam_idxs}
+    placeholder_view_tokens = list(lookup_camidx_to_view_token.values()) # is all 64 view tokens
+    placeholder_object_tokens = [train_cfg.data.placeholder_object_token]
+    placeholder_tokens = placeholder_view_tokens + placeholder_object_tokens
+
+    # get the model components 
+    text_encoder, tokenizer, vae, unet, noise_scheduler = load_sd_model_components(train_cfg)
+
+    # add the placholder tokens to the text encoder and tokenizer, and also get ther token_ids
+    token_embeds, placeholder_token_ids, placeholder_view_token_ids, placeholder_object_token_ids = Coach._add_concept_token_to_tokenizer_static(
+            train_cfg, placeholder_view_tokens, placeholder_object_tokens, tokenizer, text_encoder
         ) 
-    for prompt in infer_cfg.prompts:
-        output_path = infer_cfg.inference_dir / prompt.format(placeholder_token)
-        output_path.mkdir(exist_ok=True, parents=True)
-        prompt = prompt.format(placeholder_token)
-        for truncation_idx in infer_cfg.truncation_idxs:
-            print(f"Running with truncation index: {truncation_idx}")
-            prompt_image = run_inference(prompt=prompt,
-                                         pipeline=pipeline,
-                                         prompt_manager=prompt_manager,
-                                         seeds=infer_cfg.seeds,
-                                         output_path=output_path,
-                                         num_images_per_prompt=1,)
-                                         # truncation_idx=truncation_idx)
-            if truncation_idx is not None:
-                save_name = f"{prompt.format(placeholder_token)}_truncation_{truncation_idx}.png"
-            else:
-                save_name = f"{prompt.format(placeholder_token)}.png"
-            prompt_image.save(infer_cfg.inference_dir / save_name)
-            ipdb.set_trace()
+
+    # use the code from the validation handler to run DTU inference
+    accelerator = Accelerator()
+    validator = ValidationHandler(train_cfg, placeholder_view_tokens, 
+        placeholder_view_token_ids, placeholder_object_tokens, 
+        placeholder_object_token_ids, fixed_object_token=train_cfg.data.fixed_object_token_or_path, 
+        weights_dtype=torch.float16)
+    # validator.cfg.debug=1
+    pipeline, results = validator.infer_dtu(accelerator, tokenizer, text_encoder, unet, vae,
+                  num_images_per_prompt=None, seeds=infer_cfg.seeds, 
+                  step=infer_cfg.iteration, prompts=None, return_instead_of_save=True)
+
+    # the `results_all` is a dict with keys 'figures', 'grids', 'all_imgs_pred','all_imgs_gt', 'mse_train_mean', 'mse_test_mean', 'psnr_train_mean', 'psnr_test_mean', 'ssim_train_mean', 'ssim_test_mean', 'lpips_train_mean', 'lpips_test_mean'
+    # this  can be loaded to access the original images
+    # save results to image files in the config option `inference_dir`. If it wasn't 
+    for i in range(len(results['figures'])):
+        results['figures'][i].savefig(infer_cfg.inference_dir / f"preds_iter_{infer_cfg.iteration}_seed{infer_cfg.seeds[i]}.png", dpi=300)
+
+    # first delete the figures and grids, since they're big and can be easily 
+    # reconstructed from other things 
+    for k in ["figures","grids","imgs_gt_plot"]:
+        results.pop(k)
+    torch.save(results, infer_cfg.inference_dir / f"results_all_iter_{infer_cfg.iteration}.pt")
 
 
-def run_inference(prompt: str,
-                  pipeline: StableDiffusionPipeline,
-                  prompt_manager: PromptManager,
-                  seeds: List[int],
-                  output_path: Optional[Path] = None,
-                  num_images_per_prompt: int = 1,
-                  truncation_idx: Optional[int] = None) -> Image.Image:
-    with torch.autocast("cuda"):
-        with torch.no_grad():
-            prompt_embeds = prompt_manager.embed_prompt(prompt,
-                                                        num_images_per_prompt=num_images_per_prompt,
-                                                        truncation_idx=truncation_idx)
-    joined_images = []
-    for seed in seeds:
-        generator = torch.Generator(device='cuda').manual_seed(seed)
-        images = sd_pipeline_call(pipeline,
-                                  prompt_embeds=prompt_embeds,
-                                  generator=generator,
-                                  num_images_per_prompt=num_images_per_prompt).images
-        seed_image = Image.fromarray(np.concatenate(images, axis=1)).convert("RGB")
-        if output_path is not None:
-            save_name = f'{seed}_truncation_{truncation_idx}.png' if truncation_idx is not None else f'{seed}.png'
-            seed_image.save(output_path / save_name)
-        joined_images.append(seed_image)
-    joined_image = vis_utils.get_image_grid(joined_images)
-    return joined_image
-
-
-def load_stable_diffusion_model(pretrained_model_name_or_path: str,
-                                learned_embeds_path: Path,
-                                mapper: Optional[NeTIMapper] = None,
-                                num_denoising_steps: int = 50,
-                                torch_dtype: torch.dtype = torch.float16) -> Tuple[StableDiffusionPipeline, str, int]:
-    tokenizer = CLIPTokenizer.from_pretrained(
-        pretrained_model_name_or_path, subfolder="tokenizer")
+def load_sd_model_components(train_cfg):
+    """ 
+    Load the SD model components separately AND add the placholder object and 
+    view tokens to the tokenizer and text encoder 
+    """
+    # generate the tokenizer, and add the token_ids for the view and object tokens 
     text_encoder = NeTICLIPTextModel.from_pretrained(
-        pretrained_model_name_or_path, subfolder="text_encoder", torch_dtype=torch_dtype,
-    )
-    if mapper is not None:
-        text_encoder.text_model.embeddings.set_mapper(mapper, None)
-    placeholder_token, placeholder_token_id = CheckpointHandler.load_learned_embed_in_clip(
-        learned_embeds_path=learned_embeds_path,
-        text_encoder=text_encoder,
-        tokenizer=tokenizer
-    )
-    pipeline = StableDiffusionPipeline.from_pretrained(
-        pretrained_model_name_or_path,
-        torch_dtype=torch_dtype,
-        text_encoder=text_encoder,
-        tokenizer=tokenizer
-    ).to("cuda")
-    pipeline.scheduler = DPMSolverMultistepScheduler.from_config(pipeline.scheduler.config)
-    pipeline.scheduler.set_timesteps(num_denoising_steps, device=pipeline.device)
-    pipeline.unet.set_attn_processor(XTIAttenProc())
-    return pipeline, placeholder_token, placeholder_token_id
+            train_cfg.model.pretrained_model_name_or_path,
+            subfolder="text_encoder",
+            revision=train_cfg.model.revision,
+        )
+    tokenizer = CLIPTokenizer.from_pretrained(
+            train_cfg.model.pretrained_model_name_or_path,
+            subfolder="tokenizer")
+    vae = AutoencoderKL.from_pretrained(
+            train_cfg.model.pretrained_model_name_or_path,
+            subfolder="vae",
+            revision=train_cfg.model.revision)
+    unet = UNet2DConditionModel.from_pretrained(
+            train_cfg.model.pretrained_model_name_or_path,
+            subfolder="unet",
+            revision=train_cfg.model.revision)
+    noise_scheduler = DDPMScheduler.from_pretrained(
+            train_cfg.model.pretrained_model_name_or_path,
+            subfolder="scheduler")
 
+    return text_encoder, tokenizer, vae, unet, noise_scheduler
 
 if __name__ == '__main__':
     main()
