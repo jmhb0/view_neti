@@ -108,7 +108,7 @@ For example, `20230805_scan114_subs_1_m5_alpha5_augs7_pretrainkey8` is DTU scan 
 
 The saved checkpoints already have the outputs of running inference: they're saved to the `inference` directory. For example `preds_iter_1500_seed0.png` is the visualized predictions for iteration 1500, and diffusion sampling seed 0; a yellow bar above an image means it's a training image. Running `results=torch.load("results_all_iter_1500.pt"`)` gives a dict with image predictions, gt images, and masks. If you want to run inference yourself, do:
 ```
-python scripts/inference.py 
+python scripts/inference.py \
 	--config_path input_configs/inference.yaml \
 	--input_dir results/20230805_scan114_subs_1_m5_alpha5_augs7_pretrainkey8 \
 	--iteration 1500
