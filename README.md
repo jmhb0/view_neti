@@ -101,7 +101,7 @@ We provide checkpoints for single-image and 3-image NVS on DTU. These are the mo
 
 ```
 gdown --fuzzy --output results/ https://drive.google.com/file/d/1nuiM9H9xmdi8zTToM12aeYeIlZRYadCw/view?usp=sharing
-tar -xzvf results/view_neti_models.tar.gz
+tar -xzvf results/view_neti_models.tar.gz -C results/
 ```
 
 For example, `20230805_scan114_subs_1_m5_alpha5_augs7_pretrainkey8` is DTU scan 114, and `subs_1` means the training subset had only 1 input image. The pretrained mappers are saved for iterations 1500 and 3000. 
