@@ -1,16 +1,16 @@
 learnable_mode: 3
 log:
-  exp_name: train_m3
+  exp_name: train
   overwrite_ok: False 
   exp_dir: results
-  save_steps: 1500
-  report_to: 'wandb'
+  save_steps: 5000
+  report_to: 'tensorboard'
 data:
-  train_data_dir: data/dtu/Rectified/
-  train_data_subsets: [scan65, scan118, scan7, scan105]
-  super_category_object_tokens: [skull, statue, statue, toy]
+  train_data_dir: data/dtu/Rectified
+  train_data_subsets: [scan65,scan125,scan7,scan105]
+  super_category_object_tokens: [object,object,object,object]
+  placeholder_object_tokens: [<skull>,<statue>,<statue2>,<toy>]
   placeholder_object_token: <object>
-  placeholder_object_tokens: [<skull>, <statue>, <statue2>, <toy>]
   fixed_object_token_or_path: object 
   super_category_object_token: object
   super_category_view_token: view
@@ -18,7 +18,7 @@ data:
   camera_representation: "dtu-12d"
   dtu_subset: 0
   dtu_lighting: 3
-  augmentation_key: 4
+  augmentation_key: 7
 model:
   pretrained_model_name_or_path: stabilityai/stable-diffusion-2-1
   use_nested_dropout: False
@@ -40,14 +40,13 @@ model:
   output_bypass_alpha_view: 5
   output_bypass_alpha_object: 5
 eval:
-  validation_steps: 1500
+  validation_steps: 5000
   num_denoising_steps: 30
   validation_seeds: [0, 1]
   num_validation_images: 2
-  eval_placeholder_object_tokens:  [<skull>, <statue>, <statue2>, <toy>]
+  eval_placeholder_object_tokens:  [<skull>, <statue>, <toy>]
 optim:
   max_train_steps: 10000
   learning_rate: 1e-3
   train_batch_size: 3
   gradient_accumulation_steps: 3
-

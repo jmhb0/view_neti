@@ -583,12 +583,11 @@ class TextualInversionDataset(Dataset):
 
     def reset_sampled_object(self):
         """ 
-        *** No longer using this function ****
+        For learnable_mode==3, we train multipe object tokens. 
 
-        For learnable_mode==3, we train multipe object tokens. If we have some 
-        batch_size, but gradient_accumulation_steps>1, we might want alll the 
-        samples in the same set of accumulated batches to be from the same scene
-         so that the object-token gradients are not too noisy. 
+        We might want all the samples in the same batch (or accumulated set of 
+        batches) to be from the same scene so that the object-token gradients 
+        are not too noisy. 
 
         To do that, we sample the object indexed by `self.current_object_idx`, 
         and then we change this value only after accumuation. 
@@ -596,6 +595,7 @@ class TextualInversionDataset(Dataset):
         is done to randomly choose a new object value.
         """
         assert self.learnable_mode == 3
+        # np.random.seed(int(time.time() * 1000) % 2**32)
         self.current_object_idx = np.random.choice(len(
             self.train_data_subsets))
 
@@ -611,11 +611,8 @@ class TextualInversionDataset(Dataset):
             assert len(self.placeholder_object_tokens) == 1
 
         else:
-            np.random.seed(int(time.time() * 1000) % 2**32)
-            self.current_object_idx = np.random.choice(
-                len(self.train_data_subsets))
-            current_object = str(self.current_object_idx)
-
+            current_object = str(
+                self.train_data_subsets[self.current_object_idx])
             image_paths = self.image_paths[current_object]
             placeholder_object_token = self.lookup_object_to_placeholder_object_token[
                 current_object]
