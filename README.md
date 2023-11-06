@@ -1,6 +1,6 @@
 # Viewpoint Neural Textual Inversion (ViewNeTI)
 
-This is the code for 'Viewpoint Textual Inversion: Unleashing Novel View Synthesis with Your Pretrained 2D Diffusion Model'. See the [project website]([https://github.com/jmhb0/viewneti](https://jmhb0.github.io/viewneti/)) and the [arxiv paper](https://arxiv.org/abs/2309.07986).
+This is the code for 'Viewpoint Textual Inversion: Unleashing Novel View Synthesis with Your Pretrained 2D Diffusion Model'. See the [project website](https://jmhb0.github.io/viewneti/) and the [arxiv paper](https://arxiv.org/abs/2309.07986).
 
 ![viewneti pull figure](docs/pull_fig.png "viewneti")
 
