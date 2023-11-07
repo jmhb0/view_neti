@@ -10,7 +10,7 @@ SD_INFERENCE_TIMESTEPS = [
     100, 80, 60, 40, 20
 ]
 
-PATH_DTU_CALIBRATION_DIR = "/pasteur/u/jmhb/dtu_dataset/Calibration/cal18"
+PATH_DTU_CALIBRATION_DIR = "data/dtu/Calibration/cal18"
 # DTU camera view idxs from the regnerf config. WARNING: 0-indexed, but fnames are 1-indexed
 DTU_TRAIN_IDX = [25, 22, 28, 40, 44, 48, 0, 8, 13]
 DTU_EXCLUDE_IDX = [3, 4, 5, 6, 7, 16, 17, 18, 19, 20, 21, 36, 37, 38, 39]
@@ -28,7 +28,7 @@ TRAIN_SET_EXCLUDE_SCANS = [
     115, 116, 117
 ] # see the pixelNerf supplementary
 #
-DTU_MASKS = "/pasteur/u/jmhb/dtu_dataset/submission_data/idrmasks"
+DTU_MASKS = "data/dtu/submission_data/idrmasks"
 
 PROMPTS = [
     "A photo of a {}",
