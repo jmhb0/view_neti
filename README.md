@@ -1,6 +1,6 @@
 # Viewpoint Neural Textual Inversion (ViewNeTI)
 
-This is the code for 'Viewpoint Textual Inversion: Unleashing Novel View Synthesis with Your Pretrained 2D Diffusion Model'. See the [project website](https://github.com/jmhb0/viewneti).
+This is the code for 'Viewpoint Textual Inversion: Unleashing Novel View Synthesis with Your Pretrained 2D Diffusion Model'. See the [project website](https://jmhb0.github.io/viewneti/) and the [arxiv paper](https://arxiv.org/abs/2309.07986).
 
 ![viewneti pull figure](docs/pull_fig.png "viewneti")
 
@@ -101,14 +101,14 @@ We provide checkpoints for single-image and 3-image NVS on DTU. These are the mo
 
 ```
 gdown --fuzzy --output results/ https://drive.google.com/file/d/1nuiM9H9xmdi8zTToM12aeYeIlZRYadCw/view?usp=sharing
-tar -xzvf results/view_neti_models.tar.gz
+tar -xzvf results/view_neti_models.tar.gz -C results/
 ```
 
 For example, `20230805_scan114_subs_1_m5_alpha5_augs7_pretrainkey8` is DTU scan 114, and `subs_1` means the training subset had only 1 input image. The pretrained mappers are saved for iterations 1500 and 3000. 
 
 The saved checkpoints already have the outputs of running inference: they're saved to the `inference` directory. For example `preds_iter_1500_seed0.png` is the visualized predictions for iteration 1500, and diffusion sampling seed 0; a yellow bar above an image means it's a training image. Running `results=torch.load("results_all_iter_1500.pt"`)` gives a dict with image predictions, gt images, and masks. If you want to run inference yourself, do:
 ```
-python scripts/inference.py 
+python scripts/inference.py \
 	--config_path input_configs/inference.yaml \
 	--input_dir results/20230805_scan114_subs_1_m5_alpha5_augs7_pretrainkey8 \
 	--iteration 1500
