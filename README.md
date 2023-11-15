@@ -78,7 +78,7 @@ The view-mapper checkpoints will be saved like this: `results/mode3_4scenes/mapp
 After pretraining a view-mapper (like in the last section), choose a checkpoint, and save a path to it in `training/pretrained_models.py`. This has a dictionary that maps integer keys to path names. E.g. if using model key 1, and doing novel view synthesis from only 1 view:
 
 ```
-python scripts/train.py --config_path input_configs/train.yaml --log.exp_name mode5_scan114  --learnable_mode 5 --data.train_data_dir data/dtu/Rectified/scan114  --data.dtu_subset 1 --optim.max_train_steps 3000 --model.pretrained_view_mapper_key 1
+python scripts/train.py --config_path input_configs/train.yaml --log.exp_name mode5_scan114  --learnable_mode 5 --data.train_data_dir data/dtu/Rectified/scan114  --data.dtu_subset 1 --optim.max_train_steps 3000 --model.pretrained_view_mapper_key 8
 ```
 
 Here is a sample pretrained view-mapper that has an architecture compatible with `input_config.yml`:
