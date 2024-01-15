@@ -226,6 +226,8 @@ def dtu_generate_camidxs_to_preds(train_cfg,
     else:
         object_token = train_cfg.data.fixed_object_token_or_path
 
+    assert object_token in placeholder_object_tokens
+
     prompts = [
         f"{lookup_camidx_to_view_token[idx]}. A photo of a {object_token}"
         for idx in cam_idxs

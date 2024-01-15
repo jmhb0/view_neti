@@ -65,6 +65,7 @@ class ValidationHandler:
     def infer_dtu(self, accelerator, tokenizer, text_encoder, unet, vae,
                   num_images_per_prompt, seeds, step, prompts, return_instead_of_save=False):
         """
+        Created this to be called in scripts/inference.py
         return_instead_of_save=False
         return_instead_of_save: if True, then don't do any model logging.
         """
@@ -74,58 +75,93 @@ class ValidationHandler:
         else:
             num_denoising_steps = train_cfg.eval.num_denoising_steps
 
-        ## get list of train and test view idxs, load gt images
         # table from camidx to gt images.
         cam_idxs, cam_idxs_train, cam_idxs_test = inference_dtu.get_cam_idxs(
             train_cfg.data.dtu_subset)
 
-        ## Get image predictions, as a lookup from camidx->img.
-        lookup_camidx_to_img_pred, pipeline = inference_dtu.dtu_generate_camidxs_to_preds(
-            train_cfg=train_cfg,
-            cam_idxs=cam_idxs,
-            step=step,
-            num_denoising_steps=num_denoising_steps,
-            seeds=seeds,
-            torch_dtype=self.weight_dtype,
-            return_pipeline=True)
+        # Get image predictions as a lookup from camidx->img in `_lookup_camidx_to_img_pred`
+        # Bc when cfg.learnable_mode==3, we can have multiple objects, we'll call 
+        # the inference function once per object. 
+        # Then after that, we'll loop over the dict to do post-processing
+        _lookup_camidx_to_img_pred = {}
+        if train_cfg.debug:
+                num_denoising_steps = 2
 
-        if len(lookup_camidx_to_img_pred) == 0:
+        if self.cfg.learnable_mode != 3:
+            eval_placeholder_object_tokens = None
+        else: 
+            eval_placeholder_object_tokens = self.cfg.eval.eval_placeholder_object_tokens
+
+        for eval_placeholder_object_token in eval_placeholder_object_tokens:
+            lookup_camidx_to_img_pred, pipeline = inference_dtu.dtu_generate_camidxs_to_preds(
+                eval_placeholder_object_token=eval_placeholder_object_token,
+                train_cfg=train_cfg,
+                cam_idxs=cam_idxs,
+                step=step,
+                num_denoising_steps=num_denoising_steps,
+                seeds=seeds,
+                torch_dtype=self.weight_dtype,
+                return_pipeline=True
+            )
+            assert set(lookup_camidx_to_img_pred.keys()) == set(cam_idxs)
+            _lookup_camidx_to_img_pred[eval_placeholder_object_token] = lookup_camidx_to_img_pred
+
+        # if len(_lookup_camidx_to_img_pred) == 0:
             # this means there was a connection error thrown by diffusers library
             # see handling in dtu_generate_camidxs_to_preds
-            return
+            # return
 
-        # save the image predictions
+        # save image predictions
         if not return_instead_of_save:
             fname_saved_images = Path(
             train_cfg.log.exp_dir
         ) / f"validation-iter_{step}-denoisesteps_{train_cfg.eval.num_denoising_steps}_numseeds_{len(seeds)}_upsample_{train_cfg.eval.dtu_upsample_key}.pt"
-            torch.save(lookup_camidx_to_img_pred, fname_saved_images)
-        assert set(lookup_camidx_to_img_pred.keys()) == set(cam_idxs)
+            if len(_lookup_camidx_to_img_pred)==1:
+                torch.save(_lookup_camidx_to_img_pred[None], fname_saved_images)
+            else:
+                torch.save(_lookup_camidx_to_img_pred, fname_saved_images)
 
-        # collect gt images, as lookup camidx->img
-        lookup_camidx_to_img_gt = inference_dtu.dtu_get_gt_images(
-            cam_idxs, train_cfg.data.train_data_dir,
-            train_cfg.data.dtu_lighting, train_cfg.data.dtu_preprocess_key)
+        _results = {}
+        for (eval_placeholder_object_token, lookup_camidx_to_img_pred) in _lookup_camidx_to_img_pred.items():
+            if self.cfg.learnable_mode == 3:
+                scan_id = eval_placeholder_object_token[5:-1]
+                train_data_dir = (Path(train_cfg.data.train_data_dir) / f"scan{scan_id}")
+                if not train_data_dir.exists():
+                    raise ValueError("Expect `eval_placeholder_object_token` to be like 'scan2'" \
+                        f"for DTU scene 2, so the function inference_dtu.dtu_get_gt_images works")
+            else: 
+                train_data_dir = Path(train_cfg.data.train_data_dir)
+                scan_id = Path(train_cfg.data.train_data_dir).stem[4:]
 
-        # collect mask, as lookup camidx-> img
-        scan_id = Path(train_cfg.data.train_data_dir).stem[4:]
-        lookup_camidx_to_mask = inference_dtu.get_object_masks(
-            cam_idxs, scan_id)
+            # collect gt images, as lookup camidx->img
+            lookup_camidx_to_img_gt = inference_dtu.dtu_get_gt_images(
+                cam_idxs, train_data_dir, train_cfg.data.dtu_lighting, 
+                train_cfg.data.dtu_preprocess_key)
 
-        # do preprocessing -> torch tensors, to size (300,400)
-        imgs_pred_all_seeds, imgs_gt, masks, imgs_gt, imgs_gt_plot = inference_dtu.process_imgs(
-            cam_idxs, cam_idxs_train, lookup_camidx_to_img_pred,
-            lookup_camidx_to_img_gt, lookup_camidx_to_mask)
+            # collect mask, as lookup camidx-> img
+            lookup_camidx_to_mask = inference_dtu.get_object_masks(
+                cam_idxs, scan_id)
 
-        # run the numbers and get the grid
-        results = inference_dtu.get_result_metrics_and_grids(
-            cam_idxs, cam_idxs_train, imgs_pred_all_seeds, imgs_gt, masks, 
-            imgs_gt_plot, seeds)
+            # do preprocessing -> torch tensors, to size (300,400)
+            imgs_pred_all_seeds, imgs_gt, masks, imgs_gt, imgs_gt_plot = inference_dtu.process_imgs(
+                cam_idxs, cam_idxs_train, lookup_camidx_to_img_pred,
+                lookup_camidx_to_img_gt, lookup_camidx_to_mask)
+
+            # run the numbers and get the grid
+            results = inference_dtu.get_result_metrics_and_grids(
+                cam_idxs, cam_idxs_train, imgs_pred_all_seeds, imgs_gt, masks, 
+                imgs_gt_plot, seeds)
+            
+            _results[eval_placeholder_object_token] = results
 
         # return early if not saving to loggers or files: this branch is called by inference.py
         if return_instead_of_save:
-            return pipeline, results
+            if self.cfg.learnable_mode != 3:
+                return pipeline, _results[None]
+            else:
+                return pipeline, _results
 
+        ### don't expect to ever reach this point if mode==3
         # save the images to the loggers
         for i, seed in enumerate(seeds):
             fname_saved_images = fname_saved_images.parent / f"{fname_saved_images.stem}_seed_{seed}.png"
@@ -146,6 +182,7 @@ class ValidationHandler:
                          'lpips_train_mean', 'lpips_test_mean')
             }
             tracker.log(log_metrics)
+
         return pipeline, None
 
     def infer_mode3(self, accelerator, tokenizer, text_encoder, unet, vae,
@@ -359,6 +396,7 @@ class ValidationHandler:
               step: int,
               prompts: List[str] = None):
         """ Runs inference during our training scheme. """
+        # mode 3 gets its own func.
         if self.cfg.learnable_mode == 3:
             pipeline = self.infer_mode3(accelerator, tokenizer, text_encoder,
                                         unet, vae, num_images_per_prompt,

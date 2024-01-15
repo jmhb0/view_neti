@@ -321,6 +321,7 @@ class Coach:
     def _add_concept_token_to_tokenizer_static(cfg, placeholder_view_tokens, 
         placeholder_object_tokens, tokenizer, text_encoder
         ):
+        """ modifies the tokenizer and text_encoder in place """
         placeholder_tokens = placeholder_view_tokens + placeholder_object_tokens
         num_added_tokens = tokenizer.add_tokens(placeholder_tokens)
         if num_added_tokens == 0:
