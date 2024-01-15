@@ -130,7 +130,8 @@ def main(infer_cfg: InferenceConfig):
     for eval_placeholder_object_token, res in results.items():
         for k in ["figures","grids","imgs_gt_plot"]:
             res.pop(k)
-    torch.save(results, infer_cfg.inference_dir / f"results_all_iter_{infer_cfg.iteration}.pt")
+    eval_placeholder_object_tokens = list(results.keys())
+    torch.save(results, infer_cfg.inference_dir / f"results_all_iter_{infer_cfg.iteration}_scans_{eval_placeholder_object_tokens}_seeds_{infer_cfg.seeds}.pt")
 
 
 def load_sd_model_components(train_cfg):
