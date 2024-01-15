@@ -81,12 +81,7 @@ After pretraining a view-mapper (like in the last section), choose a checkpoint,
 python scripts/train.py --config_path input_configs/train.yaml --log.exp_name mode5_scan114  --learnable_mode 5 --data.train_data_dir data/dtu/Rectified/scan114  --data.dtu_subset 1 --optim.max_train_steps 3000 --model.pretrained_view_mapper_key 8
 ```
 
-Here is a sample pretrained view-mapper that has an architecture compatible with `input_config.yml`:
-```
-gdown --fuzzy --output results/ https://drive.google.com/file/d/1JpQ6vJB9wU1lNJ09IKVE5mM9M0ifHt7a/view?usp=sharing 
-```
-
-Mode 5 keeps the $\mathcal{M}_v$ frozen and is recommended over mode 4. 
+[Here](https://drive.google.com/file/d/1JpQ6vJB9wU1lNJ09IKVE5mM9M0ifHt7a/view?usp=sharing) is a sample pretrained view-mapper that has an architecture compatible with `input_config.yml`. Mode 5 keeps the $\mathcal{M}_v$ frozen and is recommended over mode 4. 
 
 ### Validation 
 Set validation frequency in `eval.validation_steps`. Since we didn't optimize this code, it's a bit slow: 10mins to run inference for 34 images in one scene for 3 seeds. If using `learnable_mode` 3, choose which scenes to do eval for in `eval.eval_placeholder_object_tokens` (remembering that too many eval scenes will be very slow). For validation to work, the model also has to be saved at the same step, which can be set with `log.save_steps`.
@@ -96,7 +91,8 @@ The validation does novel view synthesis on the standard 34 views used in DTU. F
 ### Logging
 Logs to Tensorboard by default. For weights & biases, set config option `log.report_to='wandb'`
 
-## Checkpoints and predictions for DTU single-image and 3-image novel view synthesis
+## Inference on pretrained checkpoints 
+### Checkpoints and predictions for DTU single-image and 3-image novel view synthesis
 We provide checkpoints for single-image and 3-image NVS on DTU. These are the models you get from running  section "Mode 4/5" above. Download with:
 
 ```
@@ -114,6 +110,20 @@ python scripts/inference.py \
 	--iteration 1500
 ```
 The DTU metrics can then be computed with `python scripts/summarize_dtu.py`
+
+### Mode 3 inference 
+Mode 3 learns a separate object mapper token per scene, so to do inference, choose the scene tokens by setting `eval_placeholder_object_tokens`. E.g. after training on all `input_configs/train_m3_88scenes.yaml`, the results are in `results/train_m3_88scenes` do inference at 100k.
+
+```
+python scripts/inference.py \
+	--config_path input_configs/inference.yaml \
+	--input_dir results/train_m3_88scenes   \
+	--iteration 50000  \
+	--eval_placeholder_object_tokens '["<scan33>", "<scan9>"]' \
+	--seeds '[0,1]'
+```
+
+To test this, download [this](https://drive.google.com/file/d/1_HlOSRNcqzo3Tz4CRNHp9K3vbH_eo9Dq/view?usp=sharing) pretrained model and uncompress into `results/train_m3_88scenes` (this model has the same view-mapper that was used for optimizing DTU in modes 4/5).
 
 ## Train on other datasets
 <a id="other_datasets"></a>
