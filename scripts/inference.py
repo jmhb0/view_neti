@@ -66,6 +66,7 @@ def main(infer_cfg: InferenceConfig):
     train_cfg = pyrallis.decode(RunConfig, train_cfg_dict) 
     train_cfg.eval.num_denoising_steps = infer_cfg.num_denoising_steps
     train_cfg.debug = infer_cfg.debug
+    train_cfg.log.exp_dir = input_dir
 
     if train_cfg.data.camera_representation != 'dtu-12d':
         raise NotImplementedError("inference.py script only implemented for dtu dataset")

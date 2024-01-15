@@ -18,7 +18,7 @@ data:
   camera_representation: "dtu-12d"
   dtu_subset: 0
   dtu_lighting: 3
-  augmentation_key: 7
+  augmentation_key: 5
 model:
   pretrained_model_name_or_path: stabilityai/stable-diffusion-2-1
   use_nested_dropout: False
