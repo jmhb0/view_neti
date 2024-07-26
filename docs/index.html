@@ -1,0 +1,287 @@
+<!-- a comment -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="">
+  <meta name="keywords" content="ViewNeTI, Viewpoint textual inversion, diffusion, 3D">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Viewpoint Textual Inversion: Unleashing Novel View Synthesis with Pretrained 2D Diffusion Models</title>
+
+  
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-0YDT6TG55N"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-0YDT6TG55N');
+  </script>
+
+  <!-- Math -->
+  <script type="text/javascript"
+  src="static/js/LaTeXMathML.js">
+  </script>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <!-- <link rel="stylesheet" href="./static/css/bulma-carousel.min.css"> -->
+  <!-- <link rel="stylesheet" href="./static/css/bulma-slider.min.css"> -->
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/favicon.png">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <!-- <script src="./static/js/bulma-carousel.min.js"></script> -->
+  <!-- <script src="./static/js/bulma-slider.min.js"></script> -->
+  <script src="./static/js/index.js"></script>
+</head>
+<body>
+
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-2 publication-title">Viewpoint Textual Inversion: Discovering Scene Representations and 3D View Control in 2D Diffusion Models</h1>
+          <h3 class="title is-4">ECCV 2024</h3>
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://jmhb0.github.io/">James Burgess</a>,</span>
+            <span class="author-block">
+              <a href="https://wangkua1.github.io/">Kuan-Chieh (Jackson) Wang</a>,</span>
+            <span class="author-block">
+              <a href="https://ai.stanford.edu/~syyeung/">Serena Yeung-Levy</a>
+            </span>
+          </div>
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">Stanford University</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- PDF Link. -->
+              <span class="link-block">
+                <a href="https://web.stanford.edu/~jmhb/files/viewneti/viewneti-paper-highres.pdf"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper</span>
+                </a>
+              </span>
+              <!-- <span class="link-block">
+                <a href="https://web.stanford.edu/~jmhb/files/viewneti/viewneti-paper-highres.pdf"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper (high-res)</span>
+                </a>
+              </span> -->
+              <span class="link-block">
+                <a href="https://arxiv.org/abs/2309.07986"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                  </span>
+                  <span>arXiv</span>
+                </a>
+              </span>
+              <!-- Code Link. -->
+              <span class="link-block">
+                <a href="https://github.com/jmhb0/view_neti"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code</span>
+                  </a>
+              </span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <h2 class="subtitle has-text-centered">
+       We demonstrate that text-to-image diffusion models have 3D view control in their text input space - they have '3D view tokens'. We also show applications to view-controlled text-to-image generation & novel view synthesis from only 1 image.. 
+      </h2>
+      <img src="./static/images/eccv-fig1.png"
+                 class=""
+                 alt="ViewNeTI pull figure."/>
+      <p>The idea: to generate a view of a 3D object at camera pose $\mathbf{R}_i$, find a point in text embedding space - the '3D view token' - to condition the diffusion generation. To generate different views $\mathbf{R}_1$, $\mathbf{R}_2$, ... learn a function for predicting the word token.</p>
+    </div>
+  </div>
+</section>
+
+
+<!--/ Abstract. -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <!-- Abstract. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+          Text-to-image diffusion models generate impressive and realistic images, but do they learn to represent the 3D world from only 2D supervision? We demonstrate that yes, certain 3D scene representations are encoded in the text embedding space of models like Stable Diffusion. Our approach, Viewpoint Neural Textual Inversion (ViewNeTI), is to discover <em>3D view tokens</em>; these tokens control the 3D viewpoint -- the rendering pose in a scene -- of generated images. Specifically, we train a small neural mapper to take continuous camera viewpoint parameters and predict a view token (a word embedding). This token conditions diffusion generation via cross-attention to produce images with the desired camera viewpoint. Using ViewNeTI as an evaluation tool, we report two findings: first, the text latent space has a continuous view-control manifold for particular 3D scenes; second, we find evidence for a generalized view-control manifold for all scenes. We conclude that since the view token controls the 3D 'rendering' viewpoint, there is likely a scene representation embedded in frozen 2D diffusion models. Finally, we exploit the 3D scene representations for 3D vision tasks, namely, view-controlled text-to-image generation, and novel view synthesis from a single image, where our approach sets state-of-the-art for LPIPS.
+          </p>
+        </div>
+      </div>
+    </div>
+
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-4">Two key findings about 3D control in the text input space</h2>
+    <p><b>Finding 1</b> (figure below, left): the text input space has a <i>continuous view-control manifold</i>. </p>
+    </p>Evidence: using just 6 views of one scene, we learn to generate 3D view tokens that interpolate to novel views.</p>
+    <br>
+    <p><b>Finding 2</b> (figure below, right): the text input space likely has a <i>semantically disentangled view control manifold</i>, meaning the same 3D view token can generalize to many scenes. 
+      <p>Evidence: we learn 3D view tokens across 88 scenes in DTU, and it generalizes to new scenes. Specifically, we use it to do novel view synthesis from a single image.</p>
+    <br>
+    <div class="content">
+      <img src="./static/images/findings.png" class="" alt="ViewNeTI key findings."/>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-4">Our approach: learn a small network to predict 3D view tokens</h2>
+    <p>We learn a small neural mapping network that takes camera parameters and predicts a `3D view token’. We then add the 3D view token to a text prompt to generate the image in that viewpoint. The train the network with <a href="https://textual-inversion.github.io/">Textual inversion</a>.</p>
+    <br>
+    <p>In the figure below, the camera parameters are a vector, $R_i$, and we also condition on the diffusion timestep, $t$, and the UNet layer $\ell$. This is for "finding 1", and for "finding 2", we also predict a token for each object (see the paper).</p>
+    <br>
+    <div class="content">
+      <img src="./static/images/system-fig.png" class="" alt="system figure."/>
+    </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-4">Conclusion: 2D models have 3D representations in their text space</h2>
+    <p>Since we kept the text-to-image diffusion model frozen, and we only learned a simple network, we conclude that text-to-image diffusion models likely have internal 3D scene representations. This might help explain why models like Stable Diffusion generate such compelling 3D features, like in this image below where infilling the background creates shadows that are consistent with the original object. A few other works study 3D representations from different perspectives - see Related Work below </p>
+  </div>
+  <br>
+  <div class="columns is-centered">
+          <div class="column content">
+            <img src="./static/images/infilling_.png" alt="Infilling StableDiffusion example"/>
+          </div>
+
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-4">Applications</h2>
+    <b>1. View-controlled text-to-image generation. </b>
+    <p>Add the 3D view token to a new text prompt to control the 3D viewpoint for new objects (sample results below, left).</p>
+    <br>
+    <b>2. Novel view synthesis from 1 image (or more images), with very good sample efficiency</b>
+    <p>By pretraining on 88 scenes from DTU or on 50 scenes from Objaverse, we can do single-image NVS (sample results below, right). Because we’re working through a pretrained diffusion model, the generated views have excellent photorealism and LPIPS. We also find that feed-forward methods like Zero-1-to-3 can’t learn any camera control on 50 scenes, and need 800k pretraining scenes to get good results (paper supplementary). 
+  </div>
+  <br>
+  <div class="columns is-centered">
+          <div class="column content">
+            <img src="./static/images/applications.png" alt="Infilling StableDiffusion example"/>
+          </div>
+
+</section>
+
+
+
+<!-- Related Work. -->
+<div class="columns is-centered">
+  <div class="column is-full-width">
+    <h2 class="title is-3">Related work</h2>
+    <div class="content has-text-justified">
+      <p>
+        <b>3D representations in 2D models</b> have been investigated by a few works that probe Unet activations over many diffusion timesteps. <a href="https://arxiv.org/abs/2310.06836">Zhan et al.</a> trains linear SVMs to predict 3D relations between two regions in the same image. <a href="https://arxiv.org/abs/2306.05720">Chen et al.</a> train linear probes for depth and salient object / background segmentation, and also perform latent intervention during generation to alter geometric properties. <a href="https://arxiv.org/abs/2404.08636">El Banani et al.</a> train a convolution network for estimating depth and surface normals, while also using latents for 2-image visual correspondence in zero-shot. By contrast, ViewNeTI (our work) studies 3D control in the word embedding space by learning `3D view tokens’. 
+      </p>
+
+      <br>
+      <p>
+        In <b>view-controlled text-to-image generation</b>, a few concurrent works had some similar ideas. In <a href="https://ttchengab.github.io/continuous_3d_words/">Continuous 3D words</a>, they control viewpoint as well as lighting and pose in the word embedding space, but also fine-tune Loras. Later, <a href="https://customdiffusion360.github.io/">Kumari et al.</a> adds camera control to model customization methods. 
+      </p>
+
+      <br>
+      <p>
+        In <b>novel view synthesis</b>, the closest is <a href="https://sites.google.com/view/dreamsparse-webpage">DreamSparse</a>, because they are interested in leveraging a pretrained diffusion models and learning few parameters for data efficiency, although they require at least 2 input views. 
+      </p>
+
+      <br>
+      <p>
+      In terms of <b>methods</b>, our work uses <a href="https://textual-inversion.github.io/">textual inversion</a> that was developed for diffusion model personalization, but we adapt it to 3D novel view synthesis. We use ideas and code from the recent <a href="https://neuraltextualinversion.github.io/NeTI/">Neural Textual Inversion (NeTI)</a> model.
+      </p>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-4">In hindsight ...</h2>
+    <p>
+      At the start of the project, we were mainly excited by the possibility that image diffusion models had learned an internal 3D model from 2D supervision. This was based on qualitative results like the car infilling we show above, which is the paper Fig.1. This seems to have been a good intuition, since other works like <a href="https://arxiv.org/abs/2310.06836">Zhan et al.</a> showed a very similar figure as their motivation, and we later saw similar figures used in various talks. It’s also stated as a motivation in <a href="https://zero123.cs.columbia.edu/">Zero-1-to-3</a>. </p>
+
+      <br>
+      <p>Despite the motivation being understanding 3D representations, our earlier drafts emphasized the application to novel view synthesis (NVS). This seemed like the highest impact contribution: ViewNeTI is very sample efficient (learning to do single-image NVS from as few as 50 scenes); and it seemed very well-motivated to do NVS via a frozen diffusion model, since it enables you to leverage knowledge from the massive 2D pre-training datasets. The key advantage is that it reduces the reliance on large 3d datasets for multi view training, however we underestimated how willing the 3D vision community was to create and work with large 3D datasets, and overestimated their excitement for sample efficient methods (especially since our results have the best LPIPS but not the best PSNR compared to other methods that use NeRFs). On the other hand, there was a lot more interest in understanding 3D representations than we expected, which was the focus of our final paper. </p>
+
+      <br>
+      <p>We only identified view-controlled text-to-image generation as an application much later, and we were surprised to find that this is a very promising direction, with a few related works by <a href="https://ttchengab.github.io/continuous_3d_words/">Cheng et al.</a> and <a href="https://arxiv.org/abs/2404.12333">Kumari et al</a>.  
+      </p>
+
+    </div>
+
+</section>
+
+
+
+
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <pre><code>@article{burgess2023viewneti,
+  author    = {Burgess, James and Wang, Kuan-Chieh and Yeung-Levy, Serena},
+  title     = {Viewpoint Textual Inversion: Discovering Scene Representations and 3D View Control in 2D Diffusion Models},
+  journal={arXiv preprint arXiv:2309.07986},
+  year      = {2024}
+}</code></pre>
+  </div>
+</section>
+
+
+<footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+          The template for this page is taken from <a href="https://nerfies.github.io/">Nerfies</a>.  If you reuse their <a href="https://github.com/nerfies/nerfies.github.io">code</a>, please link to their site.
+          </p>
+          <p>
+          .
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
