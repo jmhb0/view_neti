@@ -1,4 +1,4 @@
-# Viewpoint Neural Textual Inversion (ViewNeTI)
+# ViewNeTI [ECCV 2024]
 
 This is the code for 'Viewpoint Textual Inversion: Discovering Scene Representations and 3D View Control in 2D Diffusion Models'. See the [project website](https://jmhb0.github.io/view_neti/) and the [arxiv paper](https://arxiv.org/abs/2309.07986).
 
