@@ -134,5 +134,16 @@ Our code builds on [NeTI](https://github.com/NeuralTextualInversion/NeTI), the S
 In the NeTI codebase, they acknowledge the [diffusers implementation of textual inversion](https://github.com/huggingface/diffusers/tree/main/examples/textual_inversion) 
 and the [unofficial implementation of XTI from cloneofsimo](https://github.com/cloneofsimo/promptplusplus).
 
-
+# Cite
+```
+@misc{burgess2024viewpointtextualinversiondiscovering,
+      title={Viewpoint Textual Inversion: Discovering Scene Representations and 3D View Control in 2D Diffusion Models}, 
+      author={James Burgess and Kuan-Chieh Wang and Serena Yeung-Levy},
+      year={2024},
+      eprint={2309.07986},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2309.07986}, 
+}
+```
 
