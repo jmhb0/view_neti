@@ -136,14 +136,13 @@ and the [unofficial implementation of XTI from cloneofsimo](https://github.com/c
 
 # Cite
 ```
-@misc{burgess2024viewpointtextualinversiondiscovering,
-      title={Viewpoint Textual Inversion: Discovering Scene Representations and 3D View Control in 2D Diffusion Models}, 
-      author={James Burgess and Kuan-Chieh Wang and Serena Yeung-Levy},
-      year={2024},
-      eprint={2309.07986},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV},
-      url={https://arxiv.org/abs/2309.07986}, 
+@inproceedings{burgess2025viewpoint,
+  title={Viewpoint Textual Inversion: Discovering Scene Representations and 3D View Control in 2D Diffusion Models},
+  author={Burgess, James and Wang, Kuan-Chieh and Yeung-Levy, Serena},
+  booktitle={European Conference on Computer Vision},
+  pages={416--435},
+  year={2025},
+  organization={Springer}
 }
 ```
 
